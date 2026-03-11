@@ -1,0 +1,108 @@
+<section class="shop_section layout_padding">
+    <div class="container">
+        <div class="heading_container heading_center">
+            <h2>Latest Products</h2>
+        </div>
+
+        <div class="row" id="product-data-container">
+            </div>
+
+        <div class="d-flex justify-content-center mt-5">
+            <div id="pagination-wrapper">
+                </div>
+        </div>
+    </div>
+</section>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/bootstrap.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Load page 1 on start
+        loadProducts(1);
+
+        // Click event for pagination buttons
+        $(document).on('click', '.page-link-custom', function(e) {
+            e.preventDefault();
+            let page = $(this).data('page');
+            loadProducts(page);
+            
+            // Smooth scroll back to shop header
+            $('html, body').animate({
+                scrollTop: $(".shop_section").offset().top - 20
+            }, 500);
+        });
+
+        function loadProducts(page) {
+            // Show a simple loading state
+            $('#product-data-container').html('<div class="col-12 text-center"><h5>Loading products...</h5></div>');
+
+            $.ajax({
+                url: "{{ route('products.ajax') }}?page=" + page,
+                type: "GET",
+                success: function(response) {
+                    renderProducts(response.data);
+                    renderPagination(response);
+                },
+                error: function() {
+                    $('#product-data-container').html('<div class="col-12 text-center text-danger"><h5>Error loading products. Please try again.</h5></div>');
+                }
+            });
+        }
+
+        function renderProducts(products) {
+            let html = '';
+            if (products.length > 0) {
+                products.forEach(product => {
+                    // Adjust 'product.image' based on your database column name
+                    let imgSrc = product.image ? "images/" + product.image : "images/p1.png";
+                    
+                    html += `
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="box">
+                            <a href="/product/details/${product.id}">
+                                <div class="img-box">
+                                    <img src="${imgSrc}" alt="${product.name}">
+                                </div>
+                                <div class="detail-box">
+                                    <h6>${product.name}</h6>
+                                    <h6>Price <span>$${product.price}</span></h6>
+                                </div>
+                                <div class="new">
+                                    <span>New</span>
+                                </div>
+                            </a>
+                        </div>
+                    </div>`;
+                });
+            } else {
+                html = '<div class="col-12 text-center"><p>No products available.</p></div>';
+            }
+            $('#product-data-container').html(html);
+        }
+
+        function renderPagination(data) {
+            let paginationHtml = '';
+
+            // Previous Button
+            if (data.prev_page_url) {
+                paginationHtml += `<button class="btn btn-danger mx-1 page-link-custom" data-page="${data.current_page - 1}">Previous</button>`;
+            } else {
+                paginationHtml += `<button class="btn btn-secondary mx-1" disabled>Previous</button>`;
+            }
+
+            // Current Page Info
+            paginationHtml += `<span class="mx-3 align-self-center">Page ${data.current_page} of ${data.last_page}</span>`;
+
+            // Next Button
+            if (data.next_page_url) {
+                paginationHtml += `<button class="btn btn-danger mx-1 page-link-custom" data-page="${data.current_page + 1}">Next</button>`;
+            } else {
+                paginationHtml += `<button class="btn btn-secondary mx-1" disabled>Next</button>`;
+            }
+
+            $('#pagination-wrapper').html(paginationHtml);
+        }
+    });
+</script>
